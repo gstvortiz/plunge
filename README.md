@@ -1,6 +1,6 @@
 # Plunge
 
-Plunge encompasses some additional features that facilitate exploratory data analysis. It takes advantage of the resources of widely known data science libraries, such as Numpy, Pandas, Matplotlib, Seaborn and Sklearn.
+Plunge encompasses some additional features that facilitate exploratory data analysis. It takes advantage of the resources of widely known data science libraries, such as NumPy, Pandas, Matplotlib, Seaborn, and Scikit-Learn.
 
 ## Instalation (Google Colaboratory):
 To integrate Plunge into your Google Colaboratory environment, use the following pip command:

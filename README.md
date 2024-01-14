@@ -1,6 +1,6 @@
 # Plunge
 
-New functionalities for Data Analysis, leveraging the capabilities of Numpy, Pandas, Matplotlib, Seaborn and Scikit-Learn libraries.
+Plunge is my personal data analysis package, it encompasses some additional features that facilitate exploratory data analysis. It takes advantage of the resources of widely known data analysis libraries, such as Numpy, Pandas, Matplotlib, Seaborn and Sklearn.
 
 ## Instalation (Google Colaboratory):
 To install Plunge in your Google Colaboratory environment, use the following pip command:
@@ -17,6 +17,6 @@ import plunge as pg
 ## About the Developer
 For feedback, questions, or collaboration, feel free to reach out:
 
-- **LinkedIn:** [Seu Nome](https://www.linkedin.com/in/gstvortiz/)
+- **LinkedIn:** [Gustavo Ortiz](https://www.linkedin.com/in/gstvortiz/)
 
 Feel free to contribute, report issues, or suggest improvements on my GitHub repository. Your feedback is valuable to me!

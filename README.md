@@ -23,5 +23,3 @@ import plunge as pg
 For feedback, questions, or collaboration, feel free to reach out:
 
 - **LinkedIn:** [Gustavo Ortiz](https://www.linkedin.com/in/gstvortiz/)
-
-Feel free to contribute, report issues, or suggest improvements on Plunge. Your feedback is valuable to me!

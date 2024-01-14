@@ -1,6 +1,6 @@
 # Plunge
 
-Plunge is my personal data analysis package, it encompasses some additional features that facilitate exploratory data analysis. It takes advantage of the resources of widely known data analysis libraries, such as Numpy, Pandas, Matplotlib, Seaborn and Sklearn.
+Plunge encompasses some additional features that facilitate exploratory data analysis. It takes advantage of the resources of widely known data sciece libraries, such as Numpy, Pandas, Matplotlib, Seaborn and Sklearn.
 
 ## Instalation (Google Colaboratory):
 To integrate Plunge into your Google Colaboratory environment, use the following pip command:

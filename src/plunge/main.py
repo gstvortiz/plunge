@@ -1,16 +1,13 @@
 import os
 import shutil
-from PIL import Image
 import datetime
+from PIL import Image
+from itertools import combinations
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
-
-
-
-
 
 class MiningVisualizer():
     def __init__(self, data, subset = ['X', 'Y', 'Z'], figsize = 8, fontsize = 15, s = 30, elev = 30, azim = -75, labelpad = 10, cmap = 'turbo', colorbar = True):
@@ -59,58 +56,11 @@ class MiningVisualizer():
         return fig, ax
     
     def Expand(self, hue):
-        cols = {'XY': {'x': 'X', 'y': 'Y'}, 'XZ': {'x': 'X', 'y': 'Z'}, 'YZ': {'x': 'Y', 'y': 'Z'}}
         fig, axs = plt.subplots(1, 3, figsize = (20, 6))
-        fig.suptitle(f'Visualização Geoespacial: {hue}')
-        for i, col in enumerate(cols):
-            sns.scatterplot(data = self.data, x = cols[col]['x'], y = cols[col]['y'], hue = hue, palette='turbo', s = 40, ax = axs.ravel()[i])
-            axs.ravel()[i].set_title(col)
-        plt.show()
-
-    def GIF(self, col, datapath = 'dados', kind = 'Discreta'):
-        folder = f'{datapath}/{col}'
-        GIF(folder).Preparar()
-        for azim in range(0, 360, 2):
-            self.azim = azim
-            self.elev = 30 + 15*np.sin(azim/57.29)
-            self.Plot(col, kind)
-            plt.savefig('{}/{}'.format(folder, azim))
-            plt.close()
-        GIF(folder).Make(col)
-
-
-
-
-
-class GIF():
-    def __init__(self, folder = 'dados/img'):
-        self.folder = folder
-
-    def Preparar(self):
-        if os.path.exists(self.folder):
-            shutil.rmtree(self.folder)
-        os.mkdir(self.folder)
-    
-    def OrderedPaths(self):
-        paths = []
-        imagens = os.listdir(self.folder)
-        for imagem in imagens:
-            caminho_completo = os.path.join(self.folder, imagem)
-            data_criacao = datetime.datetime.fromtimestamp(os.path.getctime(caminho_completo))
-            paths.append((caminho_completo, data_criacao))
-        paths.sort(key=lambda x: x[1])
-        return np.array(paths)[:, 0]
-    
-    def Make(self, name):
-        imagens = []
-        for path in self.OrderedPaths():
-            imagem = Image.open(path)
-            imagens.append(imagem)
-        imagens[0].save(f'{name}.gif', save_all=True, append_images=imagens[1:], duration=70, loop=0)
-
-
-
-
+        fig.suptitle(f'Geospatial Visualization: {hue}')
+        combinacoes = list(combinations(self.subset, 2))
+        for i, (x, y) in enumerate(combinacoes):
+            sns.scatterplot(data = self.data, x = x, y = y, hue = hue, palette='turbo', s = 40, ax = axs.ravel()[i])
 
 class Correlation():
     def __init__(self, data, round = 2):
@@ -141,45 +91,45 @@ class Correlation():
     def getTopCorrelations(self, col, qtd):
         data = self.corr[col].abs().sort_values(ascending=False).dropna()[1:qtd+1]
         return list(data.index)
-    
 
-
-
-
-def dadosNulos(dados, colunas, titulo, width, height, fontsize):
-    data = dados.shape[0] - dados[colunas].isna().sum()
-    ax = sns.barplot(x=data.index, y=data.values, color = 'royalblue')
+def nullData(data, cols, title, width, height, fontsize):
+    df = data.shape[0] - data[cols].isna().sum()
+    ax = sns.barplot(x = df.index, y = df.values, color = 'royalblue')
     ax.figure.set_size_inches(width, height)
-    ax.set_title(titulo, fontsize = fontsize*1.5)
-    ax.set_xlabel('Variáveis do Conjunto', fontsize = fontsize)
-    ax.set_ylabel('Frequência Absoluta', fontsize = fontsize)
+    ax.set_title(title, fontsize = fontsize*1.5)
+    ax.set_xlabel('Columns', fontsize = fontsize)
+    ax.set_ylabel('Count', fontsize = fontsize)
     ax.set_xticklabels(ax.get_xticklabels(), rotation = -90, fontsize = fontsize)
     plt.show()
 
+def dictValueCounts(series, normalize):
+    data = series.value_counts(normalize = normalize).to_dict()
+    return {str(key): value for key, value in data.items()}
 
+def countplot(data, x, ax = False, palette = 'tab10', fontsize = 8, limit = 8):
+    ax = plt.subplots()[1] if not ax else ax 
 
-
-
-def countplot(data, x, ax, fontsize = 8):
-    ax = sns.countplot(data = data, x = x, hue = x, dodge = False, ax = ax)
-    ax.set_title(ax.get_xlabel())
+    sns.countplot(data = data, x = x, hue = x, palette = palette, dodge = False, legend = True, ax = ax)
+    ax.set_title(ax.get_xlabel(), fontsize = fontsize)
     ax.set_xlabel(None)
-    ax.set_ylabel('Quantidade')
+    ax.set_ylabel('Count', fontsize = fontsize)
     ax.set_ylim(0, data.shape[0])
 
-    dictLegend = data[x].value_counts(normalize=True).round(2).to_dict()
     handles, labels = ax.get_legend_handles_labels()
-    labels = ['{:.2f} %'.format(dictLegend[float(i)] * 100) for i in labels]
-    ax.legend(handles = handles, labels = labels, loc = 'best')
+    if len(labels) < limit: 
+        numericalCounts = dictValueCounts(data[x], False)
+        for i, label in enumerate(labels):
+            ax.text(i, numericalCounts[label], f'{numericalCounts[label]}', ha='center', va='bottom', fontsize = fontsize * 0.75)
+            
+        normalizedCounts = dictValueCounts(data[x], True)
+        labels = ['{:.2f} %'.format(normalizedCounts[str(i)] * 100) for i in labels]
+        ax.legend(handles = handles, labels = labels, loc = 'best', fontsize = fontsize * 0.75)
 
-    for valor, contagem in data[x].value_counts().items():
-            ax.text(valor, contagem, f'{contagem}', ha='center', va='bottom')
+    else:
+        ax.get_legend().remove()
 
-
-
-
-
-def histplot(data, x, ax, fontsize = 8, gap = 1):
+def histplot(data, x, ax = False, fontsize = 8, gap = 1):
+    ax = plt.subplots()[1] if not ax else ax
     stats = 'N: {} \nM: {:.2f} \nx̄: {:.2f} \nσ: {:.2f} \ncv: {:.2f} \n'.format(
             data[x].dropna().shape[0], 
             data[x].median(),
@@ -187,17 +137,13 @@ def histplot(data, x, ax, fontsize = 8, gap = 1):
             data[x].std(),
             data[x].std()/data[x].mean())
     ax = sns.histplot(data = data, x = x, kde = True, ax = ax)
-    ax.set_title(ax.get_xlabel())
+    ax.set_title(ax.get_xlabel(), fontsize = fontsize)
     ax.set_xlabel(None)
-    ax.set_ylabel('Quantidade')
+    ax.set_ylabel('Count', fontsize = fontsize)
     ax.set_xlim(ax.get_xlim()[0], ax.get_xlim()[1]*gap)
     ax.text(s = stats, x = ax.get_xlim()[1], y = ax.get_ylim()[1]*0.99, fontsize = fontsize, ha='right', va='top')
 
-
-
-
-
-def scatterplot(data, x, y, ax, fontsize = 8, gap = 1.3, color = None):
+def scatterplot(data, x, y, ax = False, fontsize = 8, gap = 1.3, color = None):
     Corr = lambda method: data[[x, y]].corr(method = method).iloc[0, 1]
     stats = 'N: {} \nPsn: {:.2f} \nSpm: {:.2f} \nKnd: {:.2f} '.format(
             data[[x, y]].dropna().shape[0],
@@ -205,40 +151,51 @@ def scatterplot(data, x, y, ax, fontsize = 8, gap = 1.3, color = None):
             Corr('spearman'),
             Corr('kendall'))
     color = sns.diverging_palette(10, 150, n=100, center='light')[int(50*(Corr('pearson')**3+1))] if not color else color
+    
+    ax = plt.subplots()[1] if not ax else ax
     ax = sns.scatterplot(data = data, x = x, y = y, color = color, ax = ax)
     ax.set_xlim(ax.get_xlim()[0], ax.get_xlim()[1]*gap)
-    ax.text(s = stats, x = ax.get_xlim()[1], y = ax.get_ylim()[1]*0.99, fontsize = fontsize, ha='right', va='top')
-
-
-
-
+    ax.text(s = stats, x = ax.get_xlim()[1], y = ax.get_ylim()[1]*0.99, fontsize = fontsize * 0.8, ha='right', va='top')
+    ax.set_title(ax.get_xlabel(), fontsize = fontsize)
+    ax.set_xlabel(None)
+    ax.set_ylabel(ax.get_ylabel(), fontsize = fontsize)
 
 def PredictionError(y_test, y_pred, ax = None, color = 'forestgreen'):
     ax = plt.subplots()[1] if not ax else ax
+
     sns.regplot(x = y_test, y = y_pred, color = color, ax = ax)
     xlim, ylim = ax.get_xlim(), ax.get_ylim()
     ax.plot(xlim, xlim, 'r--')
-    text = f'\nR²: {r2_score(y_test, y_pred):.2f}\nRMSE: {np.sqrt(mean_squared_error(y_test, y_pred)):.2f}\nMAPE: {mean_absolute_percentage_error(y_test, y_pred):.2f}'
+    text = '\n R²: {:.2f}\n RMSE: {:.2f}\n MAPE: {:.2f}'.format(
+        r2_score(y_test, y_pred),
+        np.sqrt(mean_squared_error(y_test, y_pred)),
+        mean_absolute_percentage_error(y_test, y_pred)
+    )
     ax.text(s = text, x = xlim[0], y = ylim[1], fontsize = 10, ha='left', va='top')
     ax.set_title(f'Prediction Error ({len(y_pred)})')
-    ax.set_xlabel('Valor Real')
-    ax.set_ylabel('Valor Previsto')
+    ax.set_xlabel('True Value')
+    ax.set_ylabel('Predicted Value')
 
+def FeatureImportances(data, regressor, target, n = 7, ax = False):
+    ax = plt.subplots()[1] if not ax else ax 
+    
+    df = pd.DataFrame()
+    df['Features'] = data.drop(target, axis = 1).columns
+    df['Importances'] = abs(regressor.feature_importances_)
+    df['Correlation'] = df['Features'].map(data.corr()[target]).apply(lambda x: 'Positive' if x >=0 else 'Negative')
 
+    df = df.sort_values(by = 'Importances', ascending = False)[:n].T
+    df['Others'] = ['Others', 1 - df.loc['Importances'].sum(), '']
 
+    sns.barplot(data = df.T, x = 'Features', y = 'Importances', hue = 'Correlation', ax = ax)
+    ax.set_title(f'Feature Importances ({data.shape[1]})')
 
-
-def FeatureImportances(data, variavelInteresse, regressor, ax, qtdOutras = 5, rotation = 0):
-    index = data.drop(variavelInteresse, axis = 1).columns
-    feature_importances = pd.DataFrame(data = regressor.feature_importances_, index = index, columns = ['Importâncias'])
-    feature_importances.sort_values(by = 'Importâncias', ascending = False, inplace =  True)
-    outras = feature_importances[qtdOutras:].sum()[0]
-    feature_importances = feature_importances[:qtdOutras].T
-    feature_importances['Outras'] = outras
-    correlacoes = [data[[coluna, variavelInteresse]].corr().iloc[0][1] for coluna in feature_importances.columns[:-1]]
-    cores = ['olivedrab' if correlacao >= 0 else 'brown' for correlacao in correlacoes] + ['teal']
-
-    sns.barplot(feature_importances, palette = cores, ax = ax)
-    ax.set_title(f'Feature Importances')
-    ax.set_ylim(0, 1)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation = rotation)
+def reencoder(data, columns, sep = '-'):
+    items = {}
+    for item in columns:
+        key, value = item.split(sep)
+        items.setdefault(key, []).append(item)
+    df = data.copy()
+    for item in items:
+        df[item] = (df[items[item]] == 1).idxmax(1).apply(lambda x: x.split(sep)[1])
+    return df, list(items.keys())
